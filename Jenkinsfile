@@ -1,32 +1,39 @@
-node {
-    stage 'checkout'
-    git 'https://gitlab.com/RavisankarCts/hello-world.git' 
-    
-    stage 'build'
-    sh 'mvn clean install'
-    
-    stage('Results - 1') {
-         junit '**/target/surefire-reports/TEST-*.xml'
-         archive 'target/*.jar'
-        }
-    
-    stage 'bake image'
-    docker.withRegistry('https://registry.hub.docker.com','docker-hub-credentials') {
-        def image = docker.build("ravisankar/ravisankardevops:${env.BUILD_TAG}",'.')
+
+        stage ('Scm Checkout'){
+node{
+        stage ('Scm Checkout'){
+            git credentialsId: 'github', url: 'https://github.com/soniyakarade/spring-framework-petclinic.git'}
         
-        stage 'test image'
-        image.withRun('-p 8888:8888') {springboot ->
-        sh 'while ! httping -qc1 http://localhost:8888/info; do sleep 1; done'
-        git 'https://github.com/RavisankarCts/petclinicacceptance.git'
-        sh 'mvn clean verify'
+        stage('build')
+            sh 'mvn clean install'
+        
+        stage ('Step 1st'){
+            sh '/usr/bin/docker build -t soniyakarade/test-2:v2 .'}
+    
+        stage ('push docker image'){
+            withCredentials([usernamePassword(credentialsId: 'devops-practice', passwordVariable: 'pushpwd', usernameVariable: 'pushimage')]) 
+            {
+                sh '/usr/bin/docker login -u $pushimage -p $pushpwd'
+            }
+        
+                sh '/usr/bin/docker push soniyakarade/test-2:v2'
+        
+        }
+    }it credentialsId: 'github', url: 'https://github.com/soniyakarade/centos7docker.git'}
+
+    stage ('Scm build'){
+    sh '/usr/bin/docker build -t soniyakarade/test-1:v1 .'}
+    
+    stage ('push docker image'){
+        withCredentials([usernamePassword(credentialsId: 'devops-practice', passwordVariable: 'pushpwd', usernameVariable: 'pushimage')]) 
+        {
+            sh '/usr/bin/docker login -u $pushimage -p $pushpwd'
         }
         
-        stage('Results') {
-         junit '**/target/surefire-reports/TEST-*.xml'
-         archive 'target/*.jar'
-        }
+            sh '/usr/bin/docker push soniyakarade/test-1:v1'
         
-        stage 'push image'
-        image.push()
+        
     }
+
+D
 }
